@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/axios.min.js"></script>
+    <script src="js/vue.js"></script>
+    <style>
+        form{
+            width:270px;
+        }
+        input{
+            width: 70%;
+            background: #eee;
+        }
+        input:focus{
+            background: #fff;
+        }
+        form{
+            padding: 0 12px 12px;
+        }
+        label{
+            display: block;
+            padding-bottom:12px;
+        }
+        #img-vcode{
+            width: 56px;
+            height: 21px;
+            float:right;
+            position: relative;
+            top:2px;
+            left:-6px
+        }
+        .label-text{
+            width: 30%;
+            float: left;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div id="wrap">
+        <div id="header">
+            <div style="float: right;padding-top: 24px">
+            	{{userName}}&emsp;
+            	{{date}}&emsp;
+			</div>
+            <h1>全国旅游信息管理平台</h1>
+        </div>
+        <div id="header-bar"></div>
+        <div id="content" style="height: 440px">
+            <img src="img/timg.jpg" style="float: right;height: 320px">
+            <h2>登录</h2>
+            <form>
+                <label>
+                    <div class="label-text">账&emsp;号：</div>
+                    <input type="text" v-model="user.username" name="username">
+                </label>
+                <label>
+                    <div class="label-text">密&emsp;码：</div>
+                    <input type="password" v-model="user.password" name="password">
+                </label>
+                <img :src="src" id="img-vcode" @click="getImage">
+                <label>
+                    <div class="label-text">验证码：</div>
+                    <input type="text" v-model="code" name="vcode" style="width: 100px">
+                </label>
+                <button type="button" @click="login()">登 陆</button>&emsp;
+                <a href="reg.html">去注册</a>
+            </form>
+        </div>
+        <div id="footer">
+            联系：liuchangxingparis@163.com
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+	const vm=new Vue({
+		el:"#app",
+		data:{
+			user:{},
+			code:"",
+			src:"",
+			date:"",
+			userName:""
+		},
+		methods:{
+			login(){
+				if(!this.user.username){
+					alert("请输入用户名！");
+					return;
+				}
+				if(!this.user.password){
+					alert("请输入密码！")
+					return;
+				}
+				if(!this.code){
+					alert("请输入验证码");
+					return;
+				}
+				axios.post("http://localhost:8080/travel/user/login?code="+this.code,this.user).then(res=>{
+					if(res.data.status){
+						location.href="province/provincelist.html";
+						localStorage.setItem("userName",res.data.userName);
+					}else{
+						alert(res.data.msg);
+					}
+				})
+			},
+			getImage(){
+				_this=this
+				axios.get("http://localhost:8080/travel/user/getVerifyImage").then(res=>{
+					_this.src="data:image/jpg;base64,"+res.data.image;//解码图片
+				})
+			},
+			setDate(){
+				var d=new Date();
+				var day=d.getDate();
+				var month=d.getMonth() + 1
+				var year=d.getFullYear();
+				this.date=year + "/" + month + "/" + day;
+			}
+		},
+		created(){
+			this.getImage();//调用方法获取验证码
+			this.setDate();
+		}
+	})
+</script>
+</body>
+</html>

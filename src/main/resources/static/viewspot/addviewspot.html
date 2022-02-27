@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <script src="../js/axios.min.js"></script>
+    <script src="../js/vue.js"></script>
+    <style>
+        form{
+            width:270px;
+        }
+        input{
+            width: 64%;
+            background: #eee;
+        }
+        input:focus{
+            background: #fff;
+        }
+        form{
+            padding: 0 12px 12px;
+        }
+        label{
+            display: block;
+            padding-bottom:12px;
+        }
+        .label-text{
+            width: 36%;
+            float: left;
+        }
+        #upload-tip{
+            border: 1px dashed #d9d9d9;
+            width: 135px;
+            height: 80px;
+            line-height:80px;
+            cursor: pointer;
+            font-size: 36px;
+            color:#d9d9d9;
+        }
+        #img-show{
+            width: 135px;
+            height: 80px;
+            display: block;
+            margin: 0 auto;
+            object-fit: cover;
+        }
+    </style>
+    <script>
+        function imgfileChange() {
+            var upload_tip = document.getElementById("upload-tip");
+            var img_show = document.getElementById("img-show");
+            var imgfile = document.getElementById("imgfile");
+
+            var freader = new FileReader();
+            freader.readAsDataURL(imgfile.files[0]);
+            freader.onload = function (e) {
+                img_show.src = e.target.result;
+                img_show.style.display = "inline";
+                upload_tip.style.display = "none";
+            };
+        }
+    </script>
+</head>
+<body>
+<div id="wrap">
+        <div id="header">
+            <div style="float: right;padding-top: 24px">
+            	{{userName}}&emsp;
+           		{{date}}&emsp;
+            </div>
+            <h1>旅游信息管理系统</h1>
+        </div>
+        <div id="header-bar"></div>
+        <div id="content" style="height: 440px">
+            <img src="../img/timg.jpg" style="float: right;height: 320px">
+            <h2>添加景点</h2>
+            <form action="viewspotlist.html" method="post">
+                <label>
+                    <div class="label-text">景&emsp;&emsp;点：</div>
+                    <input type="text" v-model="place.name" name="vname">
+                </label>
+                <label>
+                    <div class="label-text">印象图片：</div>
+                    <div style="text-align: center;padding-left: 36%">
+                        <div id="upload-tip">+</div>
+                        <img src="" alt="" id="img-show" style="display: none">
+                        <input type="file" id="imgfile" ref="myfile" style="display: none" onchange="imgfileChange()">
+                    </div>
+                </label>
+                <label>
+                    <div class="label-text">旺季时间：</div>
+                    <input type="text" v-model="place.hottime" name="hottime">
+                </label>
+                <label>
+                    <div class="label-text">旺季门票：</div>
+                    <input type="text" v-model="place.hotticket" name="hotprice">
+                </label>
+                <label>
+                    <div class="label-text">淡季门票：</div>
+                    <input type="text" v-model="place.dimticket" name="dimticket">
+                </label>
+                <label>
+                    <div class="label-text">景点描述：</div>
+                    <textarea type="text" v-model="place.placedes" name="placedes"></textarea>
+                </label>
+                <label>
+                    <div class="label-text">所属省份：</div>
+                    <select name="ofprovince" v-model="place.provinceid">
+                        <option v-for="province in provinces" v-text="province.name" :value="province.id"></option>
+                    </select>
+                </label>
+                <button type="button" @click="addPlace()">提 交</button>&emsp;
+                <a :href="'viewspotlist.html?provinceid='+place.provinceid">返回</a>
+            </form>
+        </div>
+        <div id="footer">
+            联系：liuchangxingparis@163.com
+        </div>
+</div>
+<script type="text/javascript">
+    	var app=new Vue({
+    		el:"#wrap",
+    		data:{
+    			provinces:[],
+    			date:"",
+    			place:{},
+    			userName:""
+    		},
+    		methods:{
+    			selectProvince(){
+    				_this=this;
+    				axios.get("http://localhost:8080/travel/province/findByPage?page=1&size=40").then(res=>{
+    					_this.provinces=res.data.provinceList;
+    					console.log(_this.provinces);
+    				})
+    			},
+     			setDate(){
+    				var d=new Date();
+    				var day=d.getDate();
+    				var month=d.getMonth() + 1
+    				var year=d.getFullYear();
+    				this.date=year + "/" + month + "/" + day;
+    			},
+    			addPlace(){
+    				console.log(this.place);
+    				let myfile=this.$refs.myfile;//获得文件对象
+    				console.log(myfile);
+    				let files=myfile.files;//获得文件数组
+    				let file=files[0];//获得第一个文件
+    				let formData=new FormData();
+    				formData.append("picFile",file);//将文件添加到formData对象
+    				formData.append("name",this.place.name);
+    				formData.append("hottime",this.place.hottime);
+    				formData.append("hotticket",this.place.hotticket);
+    				formData.append("dimticket",this.place.dimticket);
+    				formData.append("placedes",this.place.placedes);
+    				formData.append("provinceid",this.place.provinceid);
+    				axios({
+    					method:'post',
+    					url:"http://localhost:8080/travel/place/addPlace",
+    					data:formData,
+    					headers: {
+    		                'Content-Type': 'multipart/form-data'
+    		            }
+    				}).then(res=>{
+    					if(res.data.status){
+    						alert(res.data.msg);
+    						location.href="viewspotlist.html?provinceId="+this.place.provinceid;
+    					}else{
+    						alert(res.data.msg);
+    					}
+    				})
+    			}
+    		},
+    		created(){
+    			var provinceId=location.href.substring(location.href.indexOf("=")+1);
+    			this.place.provinceid=provinceId;
+    			this.selectProvince();
+    			this.setDate();
+    			this.userName=localStorage.getItem("userName");
+    		}
+    	})
+    </script>
+</body>
+</html>

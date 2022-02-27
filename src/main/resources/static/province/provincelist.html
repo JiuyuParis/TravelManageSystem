@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <script src="../js/axios.min.js"></script>
+    <script src="../js/vue.js"></script>
+    <style>
+        table{
+            width: 100%;
+            margin-bottom: 15px;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        th,td{
+            border: 1px solid #CBD6DE;
+            padding-left: 10px;
+            line-height: 28px;
+        }
+        th{
+            text-align: left;
+            background: linear-gradient(#edf2f5,#dce9f2,#edf2f5);
+            color:#467aa7;
+        }
+        tbody tr:nth-child(even){
+            background: #f2f2f2;
+        }
+        #pages{
+            text-align: center;
+            padding-top: 8px;
+        }
+        .page{
+            min-width: 50px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+<div id="wrap">
+    <div id="header">
+        <div style="float: right;padding-top: 24px">
+        	{{userName}}&emsp;
+            {{date}}&emsp;
+            <a href="../login.html" style="color:#fff;float: right">安全退出</a>
+        </div>
+        <h1>全国旅游信息管理平台</h1>
+    </div>
+    <div id="header-bar"></div>
+    <div id="content" style="height: 440px">
+        <h2>省份列表</h2>
+        <table>
+            <thead>
+            <tr>
+                <th width="15%">序号</th>
+                <th width="20%">省份</th>
+                <th width="25%">标签</th>
+                <th width="15%">景点个数</th>
+                <th width="25%">操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="(province,i) in provinceList" :key="province.id">
+                <td>{{i+1}}</td>
+                <td v-text="province.name"></td>
+                <td v-text="province.tags"></td>
+                <td v-text="province.placecounts"></td>
+                <td>
+                    <a class="btn btn-default btn-sm active" href="javascript:;" @click="deleteProvince(province.id)">删除省份</a>
+                    <a class="btn btn-default btn-sm active" :href="'../viewspot/viewspotlist.html?provinceId='+province.id">景点列表</a>
+                    <a class="btn btn-default btn-sm active" :href="'updateprovince.html?id='+province.id">修改省份</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <a href="addprovince.html">
+            <button type="button">添加省份</button>
+        </a>
+        <div id="pages">
+            <button v-if="currentPage>1" class="page" @click="findByPage(currentPage-1)">👈上一页</button>
+            <button v-if="currentPage==1&&totalPage!=0" class="page" disabled>👈上一页</button>
+            <span v-for="index in totalPage">
+	            <button style="width: 25px;text-align: center;" v-if="index!=currentPage" v-text="index" @click="findByPage(index)"></button>
+	            <button style="width: 25px;text-align: center;" v-if="index==currentPage" v-text="index" disabled="disabled"></button>
+            </span>
+            <button class="page" v-if="currentPage==totalPage" disabled>下一页👉</button>
+            <button class="page" v-if="currentPage<totalPage" @click="findByPage(currentPage+1)">下一页👉</button>
+        </div>
+    </div>
+    <div id="footer">
+        联系：liuchangxingparis@163.com
+    </div>
+</div>
+</div>
+	<script type="text/javascript">
+    	var app=new Vue({
+    		el:"#app",
+    		data:{
+    			provinceList:[],
+    			currentPage:1,
+    			size:4,
+    			totalPage:0,
+    			totalNum:0,
+    			date:"",
+    			userName:""
+    		},
+    		methods:{
+    			//分页查询生分列表
+    			findByPage(page){
+    				_this=this;
+    				axios.get("http://localhost:8080/travel/province/findByPage?page="+page+"&size="+this.size).then(res=>{
+    					_this.provinceList=res.data.provinceList;
+    					_this.totalNum=res.data.totalNum;
+    					_this.totalPage=res.data.totalPage;
+    					_this.currentPage=page;
+    				})
+    			},
+    			setDate(){
+    				var d=new Date();
+    				var day=d.getDate();
+    				var month=d.getMonth() + 1
+    				var year=d.getFullYear();
+    				this.date=year + "/" + month + "/" + day;
+    			},
+    			deleteProvince(id){
+    				 if(confirm("确定要删除吗")){
+	    				axios.get("http://localhost:8080/travel/province/deleteProvince?id="+id).then(res=>{
+	    					if(res.data.status){
+	    						alert(res.data.msg);
+	    						location.reload(true);
+	    					}else{
+	    						alert(res.data.msg);
+	    					}
+	    				})
+    				 }
+    			}
+    		},
+    		created(){
+    			this.findByPage(this.currentPage,this.size);
+    			this.setDate();
+    			this.userName=localStorage.getItem("userName");
+    		}
+    	})
+    </script>
+</body>
+</html>
